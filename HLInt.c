@@ -136,8 +136,7 @@ void printTokens() {
 	printf("Tokens:\n");
 	//iterate through the Tokens Array
 	for (int i = 0; i < tokenCount; i++) {
-		//printf("Token %d: Type: %d, Text: %s, Start Position: %d\n", 
-		//	i + 1, tokens[i]->type, tokens[i]->text, tokens[i]->startPos);
+		printf("Token %d: Type: %d, Text: %s, Start Position: %d\n", i + 1, tokens[i]->type, tokens[i]->text, tokens[i]->startPos);
 	}
 }
 
@@ -151,7 +150,12 @@ void checkTokens() {
 	for (int i = 0; i < tokenCount; i++) {
 		int next = i + 1;
 		if (next >= 0 && next < tokenCount) {
-			if (tokens[i]->type == IDENTIFIER) {
+			if (i == 0 && !(tokens[i]->type == IDENTIFIER || tokens[i]->type == NUMERIC_LITERAL)) {
+				errors++;
+				printf("Error: must start with either an identifier or a numeric literal");
+				return;
+			}
+			else if (tokens[i]->type == IDENTIFIER) {
 				//printf("found identifier \n");
 				if(tokens[next]->type != DELIMITER &&
 				   tokens[next]->type != OPERATOR &&
@@ -196,7 +200,18 @@ void checkTokens() {
 
 				}	
 			}
+			else if (tokens[i]->type == BRACE) {
+				if(tokens[next]->type != DELIMITER &&
+					tokens[next]->type != NUMERIC_LITERAL &&
+					tokens[next]->type != BRACE &&
+					tokens[next]->type != IDENTIFIER 
+				) {
+					errors++;	
+					printf("Error: next should be a Delimiter, Braces, or Identifier\n");
+					printf("The text is %s on %d\n", tokens[i]->text, tokens[i]->startPos);
 
+				}	
+			}
 
 		}
 		else {
@@ -316,7 +331,7 @@ int main(int argc, char *argv[]) {
 
 	}
 	printf("-------- %s -------- \n %d lines \n %d characters\n", argv[1], linecount, charcount);
-	printTokens();
+	//printTokens();
 	checkTokens();
 	
 	fclose(file);
