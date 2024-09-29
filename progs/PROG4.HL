@@ -1,0 +1,5 @@
+x 5: integer;
+y: double;
+x:= 3;
+if(x<5sdfsd)
+output<<x;
