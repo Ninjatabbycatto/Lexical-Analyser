@@ -32,6 +32,8 @@ struct Token {
 int tokenCapacity = 10;
 int tokenCount = 0;
 struct Token** tokens; 
+FILE *nospace;
+FILE *ressym;
 
 bool isOperator(char ch) {
 	return ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '=' || ch == '<' || ch == '>';
@@ -131,12 +133,45 @@ void addLetter (char word[], char letter) {
 	word[strlen(word) + 1] = '\0';
 }
 
+const char* typetotext(struct Token *token) {
+	 switch(token->type) {
+		case 0:
+			return "IDENTIFIER";
+		case 1:
+			return "KEYWORD";
+		case 2:
+			return "OPERATOR";
+		case 3:
+			return "NUMERIC_LITERAL";
+		case 4:
+			return "STRING_LITERAL";
+		case 5:
+			return "BOOL_LITERAL";
+		case 6:
+			return "DELIMITER";
+		case 7:
+			return "BRACE";
+		case 8:
+			return "COMMENT";
+		case 9:
+			return "PREPROCESSOR_DIRECTIVE";
+		case 10:
+			return "EOF_TOKEN";
+
+
+	}
+}
+
 void printTokens() {
-	
+	char filename[] = "RES_SYM.txt";
+	ressym = fopen(filename, "a");
+
 	printf("Tokens:\n");
 	//iterate through the Tokens Array
 	for (int i = 0; i < tokenCount; i++) {
-		printf("Token %d: Type: %d, Text: %s, Start Position: %d\n", i + 1, tokens[i]->type, tokens[i]->text, tokens[i]->startPos);
+		//printf("Token %d: Type: %d, Text: %s, Start Position: %d\n", i + 1, tokens[i]->type, tokens[i]->text, tokens[i]->startPos);
+		fprintf(ressym, "Token %d: Type: %s, Text: %s, Start Position: %d\n", i + 1, typetotext(tokens[i]), tokens[i]->text, tokens[i]->startPos);
+		
 	}
 }
 
@@ -229,12 +264,36 @@ int main(int argc, char *argv[]) {
 		printf("Usage:\n       %s <filename.HL> \n", argv[0]);
 		return 1;
 	}
-
+	//open the HL file
 	FILE *file = fopen(argv[1], "r");
 	if (file == NULL) {
 		printf("File error");
 		return 1;
 	}
+
+	//-------file creation------//
+	char filename[] = "NOSPACES.txt";
+	
+	nospace = fopen(filename, "w");
+	nospace = fopen(filename, "a");
+	
+	if (nospace == NULL) {
+		printf("Error in opening the file");
+		return 1;
+	}
+	
+	//--------res sym ----------//
+	char filename2[] = "RES_SYM.txt";
+	ressym = fopen(filename2, "w");
+
+	if (ressym == NULL) {
+		printf("Error in opening ressym");
+		return 1;
+	}
+
+	//-------file creation------//
+	
+
 
 
 	//initialize memory
@@ -250,6 +309,7 @@ int main(int argc, char *argv[]) {
 	while ((ch = fgetc(file)) != EOF) {
 		if (isspace(ch)) {
 			printf("%s \n", strbuff);
+			fprintf(nospace, "%s", strbuff);
 			lexus(strbuff, charcount);
 			memset(strbuff, '\0', sizeof(strbuff));
 		//	this is initially the idea, but became useless after implementing the is	operator, isDelimiter blahblah
@@ -257,6 +317,7 @@ int main(int argc, char *argv[]) {
 		else if (isOperator(ch)) {
 			lexus(strbuff, charcount);
 			printf("%s \n", strbuff);
+			fprintf(nospace, "%s", strbuff);
 			memset(strbuff, '\0', sizeof(strbuff));
 			char nextch = fgetc(file);
 			
@@ -265,12 +326,14 @@ int main(int argc, char *argv[]) {
 				addLetter(strbuff, ch);
 				addLetter(strbuff, nextch);
 				printf("%s \n", strbuff);
+				fprintf(nospace, "%s", strbuff);
 				lexus(strbuff, charcount);
 				memset(strbuff, '\0', sizeof(strbuff));
 			}
 			else {
 				addLetter(strbuff, ch);
 				printf("%s \n", strbuff);
+				fprintf(nospace, "%s", strbuff);
 				lexus (strbuff, charcount);
 				memset(strbuff, '\0', sizeof(strbuff));
 				ungetc(nextch, file);
@@ -280,6 +343,7 @@ int main(int argc, char *argv[]) {
 			//push the word into the lexer
 			lexus(strbuff, charcount);
 			printf("%s \n", strbuff);
+			fprintf(nospace, "%s", strbuff);
 			memset(strbuff, '\0', sizeof(strbuff));
 			
 			char nextch = fgetc(file);
@@ -287,12 +351,14 @@ int main(int argc, char *argv[]) {
 				addLetter(strbuff, ch);
 				addLetter(strbuff, nextch);
 				printf("%s \n", strbuff);
+				fprintf(nospace, "%s", strbuff);
 				lexus(strbuff, charcount);
 				memset(strbuff, '\0', sizeof(strbuff));
 			}
 			else {
 				addLetter(strbuff, ch);
 				printf("%s \n", strbuff);
+				fprintf(nospace, "%s", strbuff);
 				lexus(strbuff, charcount);
 				memset(strbuff, '\0', sizeof(strbuff));
 				ungetc(nextch, file);
@@ -305,10 +371,12 @@ int main(int argc, char *argv[]) {
 				addLetter(strbuff, ch);
 				addLetter(strbuff, nextch);
 				printf("%s \n", strbuff);
+				fprintf(nospace, "%s", strbuff);
 			}
 			else if(!isdigit(nextch)) {
 				addLetter(strbuff, ch);
 				printf("%s \n", strbuff);
+				fprintf(nospace, "%s", strbuff);
 				lexus(strbuff, charcount);
 				memset(strbuff, '\0', sizeof(strbuff));
 			
@@ -324,17 +392,19 @@ int main(int argc, char *argv[]) {
 		
 		
 		//add the letter to the end of the string
-		else addLetter(strbuff, ch);
-		
+		else {
+			addLetter(strbuff, ch);
+		}
 		charcount++;
 		if (ch == '\n') linecount++;
 
 	}
 	printf("-------- %s -------- \n %d lines \n %d characters\n", argv[1], linecount, charcount);
-	//printTokens();
+	printTokens();
 	checkTokens();
 	
 	fclose(file);
+	fclose(nospace);
 	return 0;
 				
 
